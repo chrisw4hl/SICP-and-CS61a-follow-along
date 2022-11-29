@@ -30,7 +30,7 @@
 (define (make-ordered-deck)
   (define (make-suit s)
     (every (lambda (rank) (word rank s)) '(A 2 3 4 5 6 7 8 9 10 J Q K)) )
-  (se (make-suit 'H) (make-suit 'S) (make-suit 'D) (make-suit 'C)) )
+  (se (make-suit 'H) (make-suit 'S) (make-suit 'D) (make-suit 'C) '(Z Z) ))
 
 (define (make-deck)
   (define (shuffle deck size)
@@ -41,7 +41,7 @@
     (if (= size 0)
 	deck
     	(move-card deck '() (random size)) ))
-  (shuffle (make-ordered-deck) 52) )
+  (shuffle (make-ordered-deck) 54) )
 
 
 (define (best-total hand)
@@ -51,6 +51,7 @@
   (cond ((empty? hand) (add-ace count aces))
 	((equal? 'a (trifirst hand)) (best-total-iter (bf hand) count (+ 1 aces)))
 	((member? (trifirst hand) '(q k j)) (best-total-iter (bf hand) (+ count 10) aces))
+  ((member? (trifirst hand) '(Z)) (best-total-iter (bf hand) (+ count 11) aces))
 	((= (trifirst hand) 1) (best-total-iter (bf hand) (+ count 10) aces))
 	(else (best-total-iter (bf hand) (+ count (trifirst hand)) aces))
 
@@ -98,7 +99,8 @@
   (cond ((empty? customer-hand-so-far) store)
         ((member? (first (first customer-hand-so-far)) '(a k q j)) (converter (bf customer-hand-so-far) (se store (bf (first customer-hand-so-far)))))
         ((= (first (first customer-hand-so-far)) 1) (converter (bf customer-hand-so-far) (se store (bf (bf (first customer-hand-so-far))))))
-	      ((converter (bf customer-hand-so-far) (se store (bf (first customer-hand-so-far)))))))
+        ((member? (first (first customer-hand-so-far)) '(Z)) (converter (bf customer-hand-so-far) (se store)))
+        ((converter (bf customer-hand-so-far) (se store (bf (first customer-hand-so-far)))))))
 
 ;not right yet
 (define (suit-strategy suit do-strat no-strat)
