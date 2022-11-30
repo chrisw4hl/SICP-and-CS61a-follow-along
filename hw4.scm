@@ -84,9 +84,37 @@
 
   (cons x (same-parity-helper x y)))
 
-(define (list-test x . y)
-  ;x
-  ;(car y)
-  (cdr y)
-  ;y
-  )
+;;;SICP 2.21
+(define  (square-list items)
+  (if (null? items)
+      nil
+      (cons (* (car items) (car items)) (square-list (cdr items)))))
+
+(define (square-list2 items)
+  (map (lambda (x) (* x x)) items))
+
+;;;SICP 2.22
+
+(define square (lambda (x) (* x x)))
+
+;each iteration of square-list-iter cons the next item in the list to the left of the previous item. This results in a reverse list
+(define (square-list-iter items)
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (cons (square (car things))
+                    answer))))
+  (iter items nil))
+
+;Each iteration of this version of square-list-iter keeps the (cons '() (car things)) in the left side of the entire construction.
+;The first (cons '() (car things)) is repeated within each successive call of (cons answer (square things)) within the iterative method.
+;This results in a list with all levels within the first list car
+(define (square-list-iter2 items)
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (cons answer
+                    (square (car things))))))
+  (iter items nil))
