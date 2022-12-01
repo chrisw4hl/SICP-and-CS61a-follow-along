@@ -118,3 +118,21 @@
               (cons answer
                     (square (car things))))))
   (iter items nil))
+
+;;;SICP 2.23
+(define (for-each proc items)
+  (if (null? items)
+      '()
+      (proc (car items)))
+  (if (not (null? items))
+      (for-each proc (cdr items))
+      (newline) ))
+
+;;;HW4 substitute ***************need to add abstraction, this shit is impossible to understand
+(define (substitute list oldw neww)
+  (cond ((null? list) '())
+        ;;((and (null? (cdr (car list))) ()
+        ((equal? (car (car list)) '(oldw)) (cons (cons (cdr (car list)) neww) (substitute (cdr list) oldw neww)))
+        ((equal? (cdr (car list)) '(oldw)) (cons (cons (car (car list)) neww) (substitute (cdr list) oldw neww)))
+        ((null? (car (first list))))
+        (else (cons (first (first list)) (substitute (cdr list) oldw neww)))))
