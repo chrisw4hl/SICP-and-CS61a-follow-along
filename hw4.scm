@@ -128,11 +128,16 @@
       (for-each proc (cdr items))
       (newline) ))
 
-;;;HW4 substitute ***************need to add abstraction, this shit is impossible to understand
+;;;HW4 substitute ***************maybe still add more abstraction?
 (define (substitute list oldw neww)
-  (cond ((null? list) '())
-        ;;((and (null? (cdr (car list))) ()
-        ((equal? (car (car list)) '(oldw)) (cons (cons (cdr (car list)) neww) (substitute (cdr list) oldw neww)))
-        ((equal? (cdr (car list)) '(oldw)) (cons (cons (car (car list)) neww) (substitute (cdr list) oldw neww)))
-        ((null? (car (first list))))
-        (else (cons (first (first list)) (substitute (cdr list) oldw neww)))))
+  (define (fix-word list oldw neww)
+    (if(equal? (car list) oldw)
+        (cons neww (substitute (cdr list) oldw neww))
+        (cons (car list) (substitute (cdr list) oldw neww))))
+
+  (cond((null? list) '())
+       ((not (list? (car list))) (fix-word list oldw neww)) ;(substitute (cdr list) oldw neww)))
+       (else (cons (map (lambda (x) (cond((null? x) '())
+                                         ((equal? x oldw) neww)
+                                         (else x)))
+                        (car list)) (substitute (cdr list) oldw neww)))))
