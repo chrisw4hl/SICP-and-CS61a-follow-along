@@ -136,8 +136,31 @@
         (cons (car list) (substitute (cdr list) oldw neww))))
 
   (cond((null? list) '())
-       ((not (list? (car list))) (fix-word list oldw neww)) ;(substitute (cdr list) oldw neww)))
+       ((not (list? (car list))) (fix-word list oldw neww))
        (else (cons (map (lambda (x) (cond((null? x) '())
                                          ((equal? x oldw) neww)
                                          (else x)))
                         (car list)) (substitute (cdr list) oldw neww)))))
+
+;;;HW4 substitute2
+(define (substitute2 list old-list new-list)
+  (define (choose-list x old-list new-list)
+    (if (equal? x (car old-list))
+        (car new-list)
+        (choose-list x (cdr old-list) (cdr new-list))))
+
+  (cond ((null? list) '())
+        (else (cons (map (lambda (x) (cond ((null? x) '())
+                                           ((member? x old-list) (choose-list x old-list new-list))
+                                           (else x)))
+                          (car list)) (substitute2 (cdr list) old-list new-list)))))
+
+;;HW4 extra for experts: cxr-function
+(define (cxr-function word)
+  (define (cxr-helper word base-proc)
+    (cond((equal? word "") base-proc)
+         ((equal? (first word) 'a) (car (cxr-helper (bf word) base-proc)))
+         (else (cdr (cxr-helper (bf word) base-proc)))))
+
+  (cond((not (and (equal? (first word) 'c) (equal? (last word) 'r))) '(error: bad input format))
+      (else (lambda (x) (cxr-helper (bf (bl word)) x)))))
