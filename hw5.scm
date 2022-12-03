@@ -58,4 +58,24 @@
 (define (branch-length) (car branch)) ;also no need to remove empty list
 
 ;2.30
-;
+(define (square-tree tree)
+  (cond ((null? tree) nil)
+        ((not (pair? tree)) (* tree tree))
+        (else (cons (square-tree (car tree))
+                    (square-tree (cdr tree))))))
+
+(define (square-tree-map tree)
+  (map (lambda (x)
+         (if (pair? x)
+             (square-tree-map x)
+             (* x x)))
+         tree))
+;;2.31
+(define (tree-map proc tree)
+  (map (lambda (x)
+         (if (pair? x)
+             (tree-map proc x)
+             (proc x)))
+        tree))
+(define (square x) (* x x))
+(define (square-tree2 tree) (tree-map square tree))
