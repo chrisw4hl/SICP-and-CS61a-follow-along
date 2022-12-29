@@ -79,3 +79,29 @@
         tree))
 (define (square x) (* x x))
 (define (square-tree2 tree) (tree-map square tree))
+
+;;2.32
+(define (subsets s)
+  (if (null? s)
+      (list nil)
+      (let ((rest (subsets (cdr s))))
+        (append rest (map (lambda (x)  (cons (car s) x)) rest)))))
+
+;;explanation of 2.32: the important thing to realize is that we need to capture the entire set (1 2 3) before the recursion cdrs down the list.
+;;by realizing this, we see that we need to utilize the original argumenet s, and pair the car of s with the recursive call to cdr of s to capture the first entire set.
+;;Next iteration then continues the path down the tree until the '() value is nicely added to each subset, completing the list of lists
+
+;2.36
+(define (accumulate op init sequence)
+  (if (null? sequence)
+    init
+    (op (car sequence) (accumulate op init (cdr sequence)))))
+
+(define (accumulate-n op init seqs)
+  (if (null? (car seqs))
+    nil
+    (cons (accumulate op init (map car seqs))
+          (accumulate-n op init (map cdr seqs)))))
+
+;2.37
+
