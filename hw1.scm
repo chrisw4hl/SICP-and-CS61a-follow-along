@@ -30,7 +30,10 @@ You have to implement *-helper, ^-helper, and /-helper for this assignment.
 	((list? exp) (calc-apply (first exp) (every calc-eval (bf exp))))
 	(else (error "Calc: bad expression:" exp))))
 
-
+(define (calc-apply fn args)
+  (cond ((eq? fn '+) (accumulate + 0 args))
+	((eq? fn '-) (cond ((null? args) (error "Calc: no args to -"))
+			   ((= (length args) 1) (- (car args)))
 			   (else (- (first args) (accumulate + 0 (bf args))))))
 	((eq? fn '*) (if (= 2 (count args))
 			 (apply *-helper args)
@@ -117,7 +120,7 @@ You have to implement *-helper, ^-helper, and /-helper for this assignment.
 	((member? (first sent) '(you)) (if(= count 0) (se 'i (switch (bf sent)))(se 'me (switch-helper (bf sent) (+ 1 count) ))))
 	(else (se (first sent) (switch-helper (bf sent) (+ 1 count)))))
   
- )
+ ))
  
  ;; Question 3a
 (define (first-streak strk)

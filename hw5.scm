@@ -104,4 +104,35 @@
           (accumulate-n op init (map cdr seqs)))))
 
 ;2.37
+(define (dot-product v w)
+  (accumulate + 0 (map * v w)))
+
+(define (matrix-*-vector m v)
+  (map (lambda (w) (dot-product v w)) m))
+
+(define (transpose mat)
+  (accumulate-n cons '() mat))
+
+(define (matrix-*-matrix m n)
+  (let ((cols (transpose n)))
+    (map (lambda (w) (matrix-*-vector cols w)) m)))
+
+;2.38
+(define (fold-left op initial sequence)
+  (define (iter result rest)
+    (if (null? rest)
+      result
+      (iter (op result (car rest))
+            (cdr rest))))
+  (iter initial sequence))
+
+;for fold-left and accumulate to provide the same values (op a b) == (op b a)
+
+;2.54
+(define (equal-proc? a b)
+  (cond ((or (null? a) (null? b)) #t)
+        ((or (list? a) (list? b)) (and (equal-proc? (car a) (car b)) (equal-proc? (cdr a) (cdr b))))
+        ((eq? a b) #t)
+        (else #f)))
+    
 
