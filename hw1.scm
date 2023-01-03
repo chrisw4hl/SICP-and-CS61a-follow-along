@@ -28,6 +28,7 @@ You have to implement *-helper, ^-helper, and /-helper for this assignment.
 (define (calc-eval exp)
   (cond ((number? exp) exp)
 	((list? exp) (calc-apply (first exp) (every calc-eval (bf exp))))
+    ((word? exp) exp)
 	(else (error "Calc: bad expression:" exp))))
 
 (define (calc-apply fn args)
@@ -47,8 +48,36 @@ You have to implement *-helper, ^-helper, and /-helper for this assignment.
 	((eq? fn '**) (if (= 2 (count args))
 			 (apply karatsuba args)
 			 (error "Calc: Fast Multiplication takes 2 args")))
+    ((eq? fn 'first) (if (= 1  (count args))
+                       (apply first-helper args)
+                       (error "first: first takes 1 arg")))
+    
+    ((eq? fn 'butfirst) (if (= 1  (count args))
+                       (apply butfirst-helper args)
+                       (error "first: first takes 1 arg")))
+    
+    ((eq? fn 'last) (if (= 1  (count args))
+                       (apply last-helper args)
+                       (error "first: first takes 1 arg")))
+    
+    ((eq? fn 'butlast) (if (= 1  (count args))
+                       (apply butlast-helper args)
+                       (error "first: first takes 1 arg")))
+    ((eq? fn 'word) (if (= 1 (count args))
+                      (apply word-helper args)
+                      (error "word: word takes 1 arg")))
 	(else (error "Calc: bad operator:" fn))))
 
+(define (word-helper a)
+  (word a))
+(define (first-helper a)
+  (first a))
+(define (butfirst-helper a)
+  (bf a))
+(define (last-helper a)
+  (last a))
+(define (butlast-helper a)
+  (bl a))
 ;;; Homework starts here!
 ;; Fill in these procedures
 
@@ -62,9 +91,8 @@ You have to implement *-helper, ^-helper, and /-helper for this assignment.
  
 ;; Question 2
 (define (^-helper a b)
-  (cond ((or (empty? a) (empty? b))
-      '())
-	( (= b 0)  1)
+  (cond ((or (empty? a) (empty? b)) '())
+	((= b 0)  1)
 	(else (*-helper a (^-helper a (- b 1))))))
     
 ;; Question 3
@@ -118,15 +146,11 @@ You have to implement *-helper, ^-helper, and /-helper for this assignment.
 (define (switch-helper sent count)
   (cond ((empty? sent) '()	((member? (first sent) '(i me)) (se 'you (switch-helper (bf sent) (+ 1 count))))
 	((member? (first sent) '(you)) (if(= count 0) (se 'i (switch (bf sent)))(se 'me (switch-helper (bf sent) (+ 1 count) ))))
-	(else (se (first sent) (switch-helper (bf sent) (+ 1 count)))))
-  
- ))
+	(else (se (first sent) (switch-helper (bf sent) (+ 1 count)))))))
  
  ;; Question 3a
 (define (first-streak strk)
-  (first-streak-helper strk 'new 0)
-
-  )
+  (first-streak-helper strk 'new 0))
 
 (define (first-streak-helper strk str count)
   (if (equal? str 'new) (first-streak-helper (bf strk) (first strk) (+ 1 count))
@@ -134,8 +158,8 @@ You have to implement *-helper, ^-helper, and /-helper for this assignment.
 
  ;; Question 3b
 (define (best-streak strk)
-  (best-streak-helper strk 'new 0 0)
- )
+  (best-streak-helper strk 'new 0 0))
+
 (define (best-streak-helper strk str count longest)
   (cond ((empty? strk) longest)
 	((equal? str 'new) (best-streak-helper (bf strk) (first strk) (+ 1 count) (+ 1 longest)))
