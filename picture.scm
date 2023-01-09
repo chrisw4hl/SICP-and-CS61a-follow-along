@@ -26,6 +26,18 @@
 	      (corner (corner-split painter (- n 1))))
 	  (beside (below painter top-left)
 		  (below bottom-right corner))))))
+
+
+(define (corner-split-1 painter n)
+  (if (= n 0)
+      painter
+      (let ((up (up-split painter (- n 1)))
+	    (right (right-split painter (- n 1))))
+	(let ((top-left up)
+	      (bottom-right right)
+	      (corner (corner-split painter (- n 1))))
+	  (beside (below painter top-left)
+		  (below bottom-right corner))))))
 ;2.45
 (define (split arg1 arg2)
   (lambda (painter n) (if (= n 0)
@@ -160,6 +172,11 @@
                        (make-segment (make-vect .6 0) (make-vect .5 .3)) 
                        (make-segment (make-vect .5 .3) (make-vect .4 0)) 
                        (make-segment (make-vect .4 0) (make-vect .25 0)) 
+                       (make-segment (make-vect .55 .85) (make-vect .55 .79))
+                       (make-segment (make-vect .45 .85) (make-vect .45 .79))
+                       (make-segment (make-vect .45 .72) (make-vect .45 .7))
+                       (make-segment (make-vect .55 .72) (make-vect .55 .7))
+                       (make-segment (make-vect .45 .7) (make-vect .55 .7))
                        )))
 (define (draw-line v1 v2)
   (penup)
@@ -189,6 +206,7 @@
                      (make-vect 1 0)
                      (make-vect 0 0)
                      (make-vect 1 1)))
+
 (define (shrink-to-upper-right painter)
   (transform-painter painter
 		    (make-vect 0.5 0.5)
@@ -201,6 +219,11 @@
 		     (make-vect 1.0 1.0)
 		     (make-vect 0.0 0.0)))
 
+(define (rotate180 painter)
+  (transform-painter painter
+                     (make-vect 1.0 1.0)
+                     (make-vect 0.0 1.0)
+                     (make-vect 1.0 0.0)))
 (define (squash-inwards painter)
   (transform-painter painter
 		     (make-vect 0.0 0.0)
@@ -223,6 +246,25 @@
 	(paint-left frame)
 	(paint-right frame)))))
 
+;2.51
+(define (below painter1 painter2)
+  (let ((split-point (make-vect 0.0 0.5)))
+    (let ((paint-up
+            (transform-painter painter1
+                               split-point
+                               (make-vect 1.0 0.5)
+                               (make-vect 0.0 1.0)))
+          (paint-down
+            (transform-painter painter2
+                               (make-vect 0.0 0.0)
+                               (make-vect 1.0 0)
+                               split-point)))
+      (lambda (frame)
+        (paint-up frame)
+        (paint-down frame)))))
+
+(define (below-1 painter1 painter2)
+  (rotate90 (rotate90 (rotate90 (beside (rotate90  painter1) (rotate90 painter2))))))
 ;;
 ;; Your code goes here
 ;;
