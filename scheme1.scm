@@ -1,12 +1,11 @@
-#lang simply-scheme
 ;; Simple evaluator for Scheme without DEFINE, using substitution model.
 ;; Version 1: No DEFINE, only primitive names are global.
 
 ;; The "read-eval-print loop" (REPL):
 
 (define (scheme-1)
-  (display "Scheme-1: \n")
-  
+  (display "Scheme-1:")
+  (flush)
   (print (eval-1 (read)))
   (scheme-1))
 
@@ -63,6 +62,9 @@
 	 (if (eval-1 (cadr exp))
 	     (eval-1 (caddr exp))
 	     (eval-1 (cadddr exp))))
+    ((and-exp? exp)
+     (and (eval-1 (cadr exp))
+          (eval-1 (caddr exp))))
 	((lambda-exp? exp) exp)
 	((pair? exp) (apply-1 (eval-1 (car exp))      ; eval the operator
 			      (map eval-1 (cdr exp))))
@@ -107,6 +109,7 @@
 
 (define quote-exp? (exp-checker 'quote))
 (define if-exp? (exp-checker 'if))
+(define and-exp? (exp-checker 'and))
 (define lambda-exp? (exp-checker 'lambda))
 
 
