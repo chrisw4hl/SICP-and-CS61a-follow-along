@@ -1,3 +1,4 @@
+;;# lang simply-scheme ;;for testing in racket
 ;; Simple evaluator for Scheme without DEFINE, using substitution model.
 ;; Version 1: No DEFINE, only primitive names are global.
 
@@ -5,8 +6,9 @@
 
 (define (scheme-1)
   (display "Scheme-1:")
-  (flush)
+  (flush);;for testing in actual STK
   (print (eval-1 (read)))
+  ;(display "\n") ;;for testing in racket
   (scheme-1))
 
 ;; Two important procedures:
