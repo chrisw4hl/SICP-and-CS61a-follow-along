@@ -1,4 +1,4 @@
-;;# lang simply-scheme ;;for testing in racket
+#lang simply-scheme ;;for testing in racket
 ;; Simple evaluator for Scheme without DEFINE, using substitution model.
 ;; Version 1: No DEFINE, only primitive names are global.
 
@@ -6,9 +6,9 @@
 
 (define (scheme-1)
   (display "Scheme-1:")
-  (flush);;for testing in actual STK
+  ;(flush);;for testing in actual STK
   (print (eval-1 (read)))
-  ;(display "\n") ;;for testing in racket
+  (display "\n") ;;for testing in racket
   (scheme-1))
 
 ;; Two important procedures:
@@ -64,10 +64,11 @@
 	 (if (eval-1 (cadr exp))
 	     (eval-1 (caddr exp))
 	     (eval-1 (cadddr exp))))
-    ((and-exp? exp)
-     (and (eval-1 (cadr exp))
-          (eval-1 (caddr exp))))
+        ((and-exp? exp)
+         (and (eval-1 (cadr exp))
+              (eval-1 (caddr exp))))
 	((lambda-exp? exp) exp)
+        
 	((pair? exp) (apply-1 (eval-1 (car exp))      ; eval the operator
 			      (map eval-1 (cdr exp))))
 	(else (error "bad expr: " exp))))
@@ -98,13 +99,17 @@
 			     (cadr proc)    ; the formal parameters
 			     args           ; the actual arguments
 			     '())))	    ; bound-vars, see below
+        ((map-exp? proc)
+         (if (eq? '() (cadr args))
+             '()
+             (cons (apply-1 (car args) (list (caadr args))) (apply-1 'map-1 (append (list (car args)) (list (cdadr args)))))))
 	(else (error "bad proc: " proc))))
 
 
 ;; Some trivial helper procedures:
 
 (define (constant? exp)
-  (or (number? exp) (boolean? exp) (string? exp) (procedure? exp)))
+  (or (number? exp) (boolean? exp) (string? exp) (procedure? exp) (eq? exp 'map-1)))
 
 (define (exp-checker type)
   (lambda (exp) (and (pair? exp) (eq? (car exp) type))))
@@ -113,6 +118,7 @@
 (define if-exp? (exp-checker 'if))
 (define and-exp? (exp-checker 'and))
 (define lambda-exp? (exp-checker 'lambda))
+(define (map-exp? type) (eq? 'map-1 type))
 
 
 ;; SUBSTITUTE substitutes actual arguments for *free* references to the
