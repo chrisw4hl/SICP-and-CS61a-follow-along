@@ -103,6 +103,11 @@
          (if (eq? '() (cadr args))
              '()
              (cons (apply-1 (car args) (list (caadr args))) (apply-1 'map-1 (append (list (car args)) (list (cdadr args)))))))
+        ((let-exp? proc)
+         (eval-1 (substitute (cadr args)
+                             (caar args)
+                             (cadar args)
+                             '())))
 	(else (error "bad proc: " proc))))
 
 
@@ -119,6 +124,7 @@
 (define and-exp? (exp-checker 'and))
 (define lambda-exp? (exp-checker 'lambda))
 (define (map-exp? type) (eq? 'map-1 type))
+(define (let-exp? type) (eq? 'let type))
 
 
 ;; SUBSTITUTE substitutes actual arguments for *free* references to the
