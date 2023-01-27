@@ -68,7 +68,7 @@
          (and (eval-1 (cadr exp))
               (eval-1 (caddr exp))))
 	((lambda-exp? exp) exp)
-        
+        ((let-exp? exp) (apply-1 (eval-1 (car exp)) (cdr exp)))
 	((pair? exp) (apply-1 (eval-1 (car exp))      ; eval the operator
 			      (map eval-1 (cdr exp))))
 	(else (error "bad expr: " exp))))
@@ -103,18 +103,19 @@
          (if (eq? '() (cadr args))
              '()
              (cons (apply-1 (car args) (list (caadr args))) (apply-1 'map-1 (append (list (car args)) (list (cdadr args)))))))
-        ((let-exp? proc)
-         (eval-1 (substitute (cadr args)
-                             (caar args)
-                             (cadar args)
-                             '())))
+        ((let-exp1? proc)
+         ;(print args) ;visibilty string
+         (eval-1 (substitute (cadr args) ;let body
+                             (map first (car args)) ;local vars
+                             (map eval-1 (map cadr (car args))) ;local var values
+                             '()))) ;bound-vars
 	(else (error "bad proc: " proc))))
 
 
 ;; Some trivial helper procedures:
 
 (define (constant? exp)
-  (or (number? exp) (boolean? exp) (string? exp) (procedure? exp) (eq? exp 'map-1)))
+  (or (number? exp) (boolean? exp) (string? exp) (procedure? exp) (eq? exp 'map-1) (eq? exp 'let-1)))
 
 (define (exp-checker type)
   (lambda (exp) (and (pair? exp) (eq? (car exp) type))))
@@ -124,7 +125,8 @@
 (define and-exp? (exp-checker 'and))
 (define lambda-exp? (exp-checker 'lambda))
 (define (map-exp? type) (eq? 'map-1 type))
-(define (let-exp? type) (eq? 'let type))
+(define (let-exp? type) (eq? 'let-1 (car type)))
+(define (let-exp1? type) (eq? 'let-1 type))
 
 
 ;; SUBSTITUTE substitutes actual arguments for *free* references to the
