@@ -44,8 +44,9 @@
   (acc orig-pass 'reset new-pass)
   acc)
 
-;SICP 3.8 (not working)
+;SICP 3.8 
 
 (define (eval-order arg)
-    (if (= arg 0) (begin (set! arg 1) 0)
-        arg))
+  (let ((x 0))
+    (if (= arg 1) (begin (set! x 1) 0)
+        x)))
