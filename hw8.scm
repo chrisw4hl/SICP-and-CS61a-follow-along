@@ -46,7 +46,44 @@
 
 ;SICP 3.8 
 
-(define (eval-order arg)
+(define (eval-order . arg)
   (let ((x 0))
-    (if (= arg 1) (begin (set! x 1) 0)
-        x)))
+    (lambda (arg)
+        (if (= arg 0) (begin (set! x 1) 0)
+            x))))
+
+(define h (eval-order))
+(define g (eval-order))
+
+(define (counter)
+  (let ((count 0))
+    (lambda ()
+      (set! count (+ 1 count))
+      count)))
+
+;SICP 3.10
+;testing differences in implementation for environment model analysis
+(define (make-withdraw bal)
+  (lambda (amount)
+    (if (>= bal amount)
+      (begin (set! bal (- bal amount))
+             bal)
+      "Insufficient funds")))
+
+(define (make-withdraw-let init)
+  (let ((bal init))
+    (lambda (amount)
+      (if (>= bal amount)
+        (begin (set! bal (- bal amount))
+               bal)
+        "Insufficient funds"))))
+
+;;SICP 3.10 and 3.11 drawn out on paper
+;;Immportant points are that the new version of make-account in 3.10 with the added let creates a new procedure
+;;bound to the frame created when (W1 50) is invoked. The behavior of both implementations is the same.
+;;***may need some clarification for 3.10
+;;3.11 creates a local frame with local procedures withdraw, deposit, and dispatch defined in the local frame.
+;;The local dispatch procedure is linked to the global value of the account object.
+;;When called, the account object returns the correct local procedure from dispatch, and is evaluated with the specified amount.
+;;separate account objects create new local frames with additional withdraw, deposit, dispatch, and balance variables.
+;;The account objects are linked to their respective local dispatch procedures.
