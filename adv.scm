@@ -27,6 +27,7 @@
 	(error "Person already in this place" (list name new-person)))
     (set! people (cons new-person people))
     (for-each (lambda (proc) (proc)) entry-procs)
+    (for-each (lambda (obj) (ask obj 'notice obj)) (cdr people))
     'appeared)
   (method (gone thing)
     (if (not (memq thing things))
@@ -39,7 +40,8 @@
 	(error "Disappearing person not here" (list name person)))
     (set! people (delete person people)) 
     'disappeared)
-
+  (method (may-enter? person)
+          #t)
   (method (new-neighbor direction neighbor)
     (if (assoc direction directions-and-neighbors)
 	(error "Direction already assigned a neighbor" (list name direction)))
@@ -59,6 +61,41 @@
     (set! exit-procs '())
     (set! entry-procs '())
     'cleared) )
+
+(define-class (locked-place name)
+    (instance-vars
+      (locked #t))
+    (parent (place name))
+    (method (type) 'locked-place)
+    (method (may-enter? person)
+        (not locked))
+    (method (unlock)
+        (set! locked #f)
+        (announce-unlock name)))
+
+(define-class (garage name)
+    (class-vars (ticket-number 0))
+    (instance-vars (table (make-table)))
+    (parent (place name))
+    (method (park car-item)
+        (if (memq car-item (ask self 'things))
+            (begin
+                (set! ticket-number (+ 1 ticket-number))
+                (insert! ticket-number car-item table)
+                (ask (ask car-item 'possessor) 'take (instantiate ticket 'TICKET ticket-number self))
+                (ask (ask car-item 'possessor) 'lose car-item))
+            (error "car not in garage")))
+    (method (unpark ticket)
+        (if (eq? (ask ticket 'name) 'TICKET)
+          (begin
+            (if (lookup (ask ticket 'serial) table)
+                (begin
+                (let ((car-item (lookup (ask ticket 'serial) table)))
+                  (ask (ask ticket 'possessor) 'take car-item)
+                  (ask (ask ticket 'possessor) 'lose ticket)
+                  (insert! (ask ticket 'serial) #f table)))
+                (error "ticket not associated with a car")))
+          (error "not a ticket"))))
 
 (define-class (person name place)
   (instance-vars
@@ -106,6 +143,8 @@
     (let ((new-place (ask place 'look-in direction)))
       (cond ((null? new-place)
 	     (error "Can't go" direction))
+            ((not (ask new-place 'may-enter? self))
+             (error "locked" direction))
 	    (else
 	     (ask place 'exit self)
 	     (announce-move name place new-place)
@@ -141,6 +180,9 @@
 	    dispatch)))
        (else (error "Bad message to class" class-message))))))
 
+(define-class (ticket name serial place)
+    (parent (thing name))
+    (initialize (ask place 'appear self)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Implementation of thieves for part two
@@ -192,7 +234,11 @@
 (define (can-go from direction to)
   (ask from 'new-neighbor direction to))
 
-
+(define (announce-unlock name)
+  (newline)
+  (display name)
+  (display " has been unlocked")
+  (newline))
 (define (announce-take name thing)
   (newline)
   (display name)

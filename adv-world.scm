@@ -47,9 +47,19 @@
 (define Brian (instantiate person 'Brian BH-Office))
 (define hacker (instantiate person 'hacker 61A-lab))
 (define nasty (instantiate thief 'nasty sproul-plaza))
+(define Chris (instantiate person 'Chris Noahs));used for debugging
+(define tester (instantiate person 'tester sproul-plaza))
 
-(define (sproul-hall-exit)
-   (error "You can check out any time you'd like, but you can never leave"))
+(ask tester 'set-talk "hello tester")
+
+(define sproul-hall-exit
+  (let ((sh-exit-count 0))
+    (lambda ()
+      (if (< sh-exit-count 3)
+        (begin (set! sh-exit-count (+ 1 sh-exit-count)) (error "You can check out any time you'd like, but you can never leave"))
+        ))))
+
+
 
 (define (bh-office-exit)
   (print "What's your favorite programming language?")
@@ -78,7 +88,11 @@
 
 (define bagel (instantiate thing 'bagel))
 (ask Noahs 'appear bagel)
-
 (define coffee (instantiate thing 'coffee))
 (ask Intermezzo 'appear coffee)
-
+(define singer (instantiate person 'rick sproul-plaza))
+(ask singer 'set-talk "My funny valentine, sweet comic valentine")
+(define preacher (instantiate person 'preacher sproul-plaza))
+(ask preacher 'set-talk "Praise the Lord")
+(define street-person (instantiate person 'harry telegraph-ave))
+(ask street-person 'set-talk "Brother, can you spare a buck")

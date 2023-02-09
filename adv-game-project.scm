@@ -1,6 +1,8 @@
 ;;1. seems to work as expected
 ;;2A. calling the person object returns a procedure
-;;2B. not sure yet, need to dig into the code
+;;2B. places understand the messages: 'type, 'neighbors, 'exits, 'look-in, 'appear,'enter,'gone,'exit,
+;;    'new-neighbor,'add-entry-procedure,'add-exit-procedure, 'remove-entry-procedure, 
+;;    'remove-exit-procedure, and 'clear-all-procs
 ;;2C. all calls work as expected, even without defining the op level objects
 ;;    the call to ask something of 'Peoples-park' does not work, since our working environment
 ;;    does not have a pointer to the object of 'Peoples-park'
@@ -15,8 +17,12 @@
     (map name (ask obj 'possessions))
     (map name (ask obj 'things))))
 
-;can't figure out how to get thing locations yet, still working
 (define (whereis obj)
   (if (person? obj)
-    (ask obj 'place)
-    obj))
+    (name (ask obj 'place))
+    "Object not a person"))
+
+(define (owner obj)
+  (if (thing? obj)
+    (name (ask obj 'possesor) 'place)
+    "Object not a thing"))
