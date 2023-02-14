@@ -49,9 +49,133 @@
 
 
 
-;SICP 3.21
+;SICP 3.21 mess around with queues
+;the below implementation of queues does not insert the object into the queue twice, the queue object rear pointer
+;is simply pointing to the second object as designed. It is keeping track of the end of the list to easily
+;insert new items at that location
 (define (last-pair x)
   (if (null? (cdr x)) x (last-pair (cdr x))))
 
 (define (make-cycle x)
   (set-cdr! (last-pair x) x) x)
+
+(define (front-ptr queue) (car queue))
+(define (rear-ptr queue) (cdr queue))
+(define (set-front-ptr! queue item)
+  (set-car! queue item))
+
+(define (set-rear-ptr! queue item)
+  (set-cdr! queue item))
+
+(define (empty-queue? queue)
+  (null? (front-ptr queue)))
+
+(define (make-queue) (cons '() '()))
+
+(define (front-queue queue)
+  (if (empty-queue? queue)
+    (error "FRONT called with an empty queue")
+    (car (front-ptr queue))))
+
+(define (insert-queue! queue item)
+  (let ((new-pair (cons item '())))
+    (cond ((empty-queue? queue)
+           (set-front-ptr! queue new-pair)
+           (set-rear-ptr! queue new-pair)
+           queue)
+          (else
+            (set-cdr! (rear-ptr queue) new-pair)
+            (set-rear-ptr! queue new-pair)
+            queue))))
+
+(define (delete-queue! queue)
+  (cond ((empty-queue? queue)
+         (error "DELETE! called with an empty queue" queue))
+        (else (set-front-ptr! queue (cdr (front-ptr queue)))
+              queue)))
+
+(define (print-queue queue)
+  (display (car queue))
+  (display "\n"))
+
+;SICP 3.22 message passing/object implementation of queues with local state
+(define (make-queue1)
+  (let ((front-ptr '())
+        (rear-ptr '()))
+    (define (insert-queue! item)
+      (cond ((null? front-ptr)
+             (set! front-ptr item)
+             (set! rear-ptr item)
+             front-ptr)
+            (else
+              (set-cdr! rear-ptr item)
+              (set! rear-ptr item)
+              front-ptr)))
+    (define (delete!)
+      (cond ((null? front-ptr)
+             (error "DELETE! called on an empty queue object"))
+            (else
+              (set! front-ptr (cdr front-ptr))
+              front-ptr)))
+    (define (dispatch m . n)
+      (cond ((eq? m 'insert-queue!) (insert-queue! n))
+            ((eq? m 'delete!) (delete!))
+            (else 
+              (error "Queue does not recognize procedure call"))))
+dispatch))
+
+;SICP 3.23 hmm, I'll have to think about this further. Is it possible to store a copy of the reverse linked list
+;in the same list object? getting looped lists with this mehtod. Potenitally create separate copy of reversed list
+;locally in a procedure?
+(define (make-deque) (list (list '() '()) (list '() '()) (list '() '())))
+
+(define (front-deque queue) (car queue))
+
+(define (rear-deque queue) (cadr queue))
+
+(define (reverse-deque queue) (cddr queue))
+
+(define (empty-deque? queue)  (null? (front-deque queue)))
+
+(define (set-deque-front-ptr! queue new-item) (set-car! (front-deque queue) new-item))
+
+(define (set-deque-rear-ptr! queue new-item) (set-cdr!  (rear-deque queue) new-item))
+
+(define (set-deque-reverse-list! queue new-item) (set-cdr! (reverse-deque queue) new-item))
+
+(define (front-insert-deque! queue item)
+  (let ((new-item (cons item '())))
+    (cond ((empty-deque? queue)
+           (set-deque-front-ptr! queue new-item)
+           (set-deque-rear-ptr! queue new-item)
+           (set-deque-reverse-list! queue new-item)
+           queue)
+          (else
+            (set-cdr! new-item (front-deque queue))
+            (set-deque-front-ptr! queue new-item)
+            queue))))
+
+(define (rear-insert-deque! queue item)
+  (let ((new-item (cons item '())))
+    (cond ((empty-deque? queue)
+            (set-deque-front-ptr! queue new-item)
+            (set-deque-rear-ptr! queue new-item)
+            queue)
+           (else 
+             (set-cdr! (rear-deque queue) new-item)
+             (set-deque-rear-ptr! queue new-item)
+             queue))))
+
+(define (front-delete-deque! queue)
+  (cond ((empty-deque? queue)
+         (error "Delete! called on empty deque" queue))
+        (else 
+          (set-deque-front-ptr! queue (cdr (front-deque queue)))
+          queue)))
+
+(define (rear-delete-deque! queue)
+  (cond ((empty-deque? queue)
+         (error "Delete! called on empty deque" queue))
+        (else
+          (set-deque-rear-ptr! queue '())
+          queue)))
