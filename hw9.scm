@@ -125,44 +125,64 @@
 dispatch))
 
 ;SICP 3.23 hmm, I'll have to think about this further. Is it possible to store a copy of the reverse linked list
-;in the same list object? getting looped lists with this mehtod. Potenitally create separate copy of reversed list
+;in the same list object? getting circular lists with this mehtod. Potenitally create separate copy of reversed list
 ;locally in a procedure?
-(define (make-deque) (list (list '() '()) (list '() '()) (list '() '())))
+
+(define (make-node init)
+  (let ((data init)
+        (previous '())
+        (next '()))
+      (define (set-next! item) (set! next item))
+      (define (set-previous! item) (set! previous item))
+      (define (set-data! item) (set! data item))
+      (define (dispatch m) (cond ((eq? m 'set-next!) set-next!)
+                                     ((eq? m 'set-previous!) set-previous!)
+                                     ((eq? m 'set-data!) set-data!)
+                                     ((eq? m 'data) data)
+                                     ((eq? m 'next) next)
+                                     ((eq? m 'previous) previous)
+                                     (else (error "No defined method" m))))
+      dispatch))
+
+(define (make-deque) (cons '() '()))
 
 (define (front-deque queue) (car queue))
 
-(define (rear-deque queue) (cadr queue))
-
-(define (reverse-deque queue) (cddr queue))
+(define (rear-deque queue) (cdr queue))
 
 (define (empty-deque? queue)  (null? (front-deque queue)))
 
-(define (set-deque-front-ptr! queue new-item) (set-car! (front-deque queue) new-item))
+(define (set-deque-front-ptr! queue new-item) (set-car! queue new-item))
 
-(define (set-deque-rear-ptr! queue new-item) (set-cdr!  (rear-deque queue) new-item))
+(define (set-deque-rear-ptr! queue new-item) (set-cdr!  queue new-item))
 
-(define (set-deque-reverse-list! queue new-item) (set-cdr! (reverse-deque queue) new-item))
+(define (set-next! item new-next) (((car item) 'set-next!) new-next))
+
+(define (set-previous! item new-previous) (((car item) 'set-previous!) new-previous))
 
 (define (front-insert-deque! queue item)
-  (let ((new-item (cons item '())))
+  (let ((new-item (cons (make-node item) '())))
     (cond ((empty-deque? queue)
            (set-deque-front-ptr! queue new-item)
            (set-deque-rear-ptr! queue new-item)
-           (set-deque-reverse-list! queue new-item)
            queue)
           (else
             (set-cdr! new-item (front-deque queue))
+            (set-next! new-item (front-deque queue))
+            (set-previous! (front-deque queue) new-item)
             (set-deque-front-ptr! queue new-item)
             queue))))
 
 (define (rear-insert-deque! queue item)
-  (let ((new-item (cons item '())))
+  (let ((new-item (cons (make-node item) '())))
     (cond ((empty-deque? queue)
             (set-deque-front-ptr! queue new-item)
             (set-deque-rear-ptr! queue new-item)
             queue)
            (else 
-             (set-cdr! (rear-deque queue) new-item)
+             (set-cdr! (rear-deque queue) new-item) 
+             (set-next! (rear-deque queue) new-item)
+             (set-previous! new-item (rear-deque queue))
              (set-deque-rear-ptr! queue new-item)
              queue))))
 
@@ -177,5 +197,6 @@ dispatch))
   (cond ((empty-deque? queue)
          (error "Delete! called on empty deque" queue))
         (else
-          (set-deque-rear-ptr! queue '())
+          (set-next! (cons (car ((car (rear-deque queue)) 'previous)) '()) '())
+          (set-deque-rear-ptr! queue (car ((car (rear-deque queue)) 'previous)))
           queue)))
