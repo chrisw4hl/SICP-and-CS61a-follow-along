@@ -160,6 +160,11 @@ dispatch))
 
 (define (set-previous! item new-previous) (((car item) 'set-previous!) new-previous))
 
+(define (regen-deque queue)
+  (if (null? queue)
+    '()
+    (cons (car queue) (regen-deque ((car queue) 'next)))))
+
 (define (front-insert-deque! queue item)
   (let ((new-item (cons (make-node item) '())))
     (cond ((empty-deque? queue)
@@ -199,4 +204,5 @@ dispatch))
         (else
           (set-next! (cons (car ((car (rear-deque queue)) 'previous)) '()) '())
           (set-deque-rear-ptr! queue (car ((car (rear-deque queue)) 'previous)))
+          (set-deque-front-ptr! queue (regen-deque (front-deque queue)))
           queue)))
