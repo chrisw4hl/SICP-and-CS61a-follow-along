@@ -206,3 +206,141 @@ dispatch))
           (set-deque-rear-ptr! queue (car ((car (rear-deque queue)) 'previous)))
           (set-deque-front-ptr! queue (regen-deque (front-deque queue)))
           queue)))
+
+
+;SICP 3.25
+;below make-table code modified from SICP to allow arbitrary number of keys for 3.25
+(define (make-table)
+  (let ((local-table (list '*table*)))
+
+    (define (record? subtable)
+      (if (and (not (pair? (cdr subtable))) subtable)
+        #t
+        #f))
+
+    (define (lookup key-list table)
+      (let ((subtable
+              (assoc (car key-list) (cdr table))))
+        (cond ((and subtable (record? subtable) (null? (cdr key-list)))
+                subtable) ;(cons table subtable) to return both the previous level and current value pairs
+              ((and subtable (null? (cdr key-list)) (not (record? subtable))) subtable)
+              ((not subtable) #f)
+              (else (lookup (cdr key-list) subtable)))))
+
+    (define (insert! key-list value table)
+      (let ((subtable
+              (assoc (car key-list) table)))
+        (if subtable
+            (if (record? subtable)
+                subtable
+                (insert! (cdr key-list) value subtable))
+            (set-cdr! table
+                      (cons (gen-struct key-list value)
+                      (cdr table)))))
+      'ok)
+
+    (define (gen-struct key-list val)
+      (if (null? (cdr key-list))
+        (cons (car key-list) val)
+        (list (car key-list) (gen-struct (cdr key-list) val))))
+
+    (define (dispatch m)
+        (cond ((eq? m 'lookup-proc) lookup)
+          ((eq? m 'insert-proc!) insert!)
+          ((eq? m 'table) local-table)
+          (else (error "Unknown operation: TABLE" m))))
+
+  dispatch))
+
+(define (gen-struct key-list val)
+      (if (null? (cdr key-list))
+        (cons (car key-list) val)
+        (list (car key-list) (gen-struct (cdr key-list) val))))
+
+;SICP 3.27
+;(memo-fib f) as described in SICP 3.3.3 computes the nth fibonacci number in a number of steps proportional to n.
+;The procedure accomplishes this by checking if the result has been previously computed during the recursive computation.
+;If the value is already in the table, the function just pulls the result from the table. The special form (or)
+;allows scheme to only compute the body of the let in the or if there is no value (fib x) already stored in the table.
+;If the memoize function must actually compute the value, it saves the value in the table, then returns the result.
+;this allows the coupled functions to only calculate the value of (fib x) once, even if conventionally the
+;value would be calculated many times through recursion
+(define (lookup key table)
+  (let ((record (assoc key (cdr table))))
+    (if record
+      (cdr record)
+      false)))
+(define (insert! key value table)
+  (let ((record (assoc key (cdr table))))
+    (if record
+      (set-cdr! record value)
+      (set-cdr! table
+                (cons (cons key value)
+                (cdr table)))))
+  'ok)
+
+(define (make-table1)
+  (list '*table*))
+
+(define (memoize f)
+  (let ((table (make-table1)))
+    (lambda (x)
+      (let ((previously-computed-result
+              (lookup x table)))
+        (or previously-computed-result
+            (let ((result (f x)))
+              (insert! x result table)
+              result))))))
+
+(define memo-fib
+  (memoize
+    (lambda (n)
+      (cond ((= n 0) 0)
+            ((= n 1) 1)
+            (else (+ (memo-fib (- n 1))
+                     (memo-fib (- n 2))))))))
+
+;HW9 #1 vector-append
+(define (vector-append a b)
+  (let* ((counta (vector-length a))
+        (countb (vector-length b))
+        (len (+ counta countb)))
+    (define (loop newvec n)
+      (if (< n 0)
+        newvec
+        (if (>= n counta)
+          (begin (vector-set! newvec n (vector-ref b (- n counta)))
+                 (loop newvec (- n 1)))
+          (begin (vector-set! newvec n (vector-ref a n))
+                 (loop newvec (- n 1))))))
+    (loop (make-vector len) (- len 1))))
+
+;HW9 #2 vector-filter. This version is faster than converting the input vector to list, filtering as list,
+;then returning vector by converting list to vector. It is faster because the conversions all require
+;computations of order n, then the filter itself requires order n instructions. By runnning through the vector
+;then holding the passed items in a list, we are saving computations. Then converting the held list to a vector
+;requires order n computations. For each item in the vector, checking the pred then adding the item to hold
+;are constant time operations.
+(define (vector-filter pred v)
+  (let ((len (vector-length v)))
+    (define (loop n hold)
+      (if (< n 0)
+        (list->vector hold) 
+        (if (pred (vector-ref v n))
+          (loop (- n 1) (cons (vector-ref v n) hold))
+          (loop (- n 1) hold))))
+    (loop (- len 1) '()))) 
+
+;HW9 #3 bubble-sort; prove in notebook
+(define (bubble-sort v)
+  (let ((len (vector-length v))
+        (hold 0))
+    (define (loop n count)
+      (cond ((and (= n (- count 1)) (= count 1)) v)
+            ((= n (- count 1)) (loop 0 (- count 1)))
+            ((> (vector-ref v n) (vector-ref v (+ n 1)))
+                (begin (set! hold (vector-ref v n)) 
+                        (vector-set! v n (vector-ref v (+ n 1))) 
+                 (vector-set! v (+ n 1) hold) (loop (+ n 1) count)))
+            (else (loop (+ n 1) count))))
+    (loop 0 len)))
