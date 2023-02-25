@@ -9,7 +9,9 @@
    (people '())
    (entry-procs '())
    (exit-procs '()))
+  (parent (basic-object name))
   (method (type) 'place)
+  (method (place?) #t)
   (method (neighbors) (map cdr directions-and-neighbors))
   (method (exits) (map car directions-and-neighbors))
   (method (look-in direction)
@@ -97,13 +99,45 @@
                 (error "ticket not associated with a car")))
           (error "not a ticket"))))
 
+(define-class (hotspot name password)
+    (instance-vars
+        (connected-laptops '()))
+    (parent (place name))
+    (method (connect laptop user-password)
+            (if (eq? (ask laptop 'type) 'laptop)
+              (if (memq laptop (ask self 'things)) 
+                (if (eq? password user-password)
+                  (set! connected-laptops (cons laptop connected-laptops))
+                  (error "password is incorret for" name))
+                (error "laptop trying to connect is not within range of" name))
+              (error "item trying to connect is not a laptop" laptop)))
+    (method (disconnect laptop)
+            (set! connected-laptops 
+              (filter (lambda (x) (not (eq? laptop x))) 
+                                            connected-laptops)))
+    (method (surf laptop website)
+            (if (memq laptop connected-laptops)
+              (system (string-append "lynx " website))
+              (error "laptop not connected to network")))
+    (method (gone laptop)
+        (if (eq? (ask laptop 'type) 'laptop)
+                (begin
+                    (ask self 'disconnect laptop)
+                    (usual 'gone laptop))
+                (usual 'gone laptop))))
+
+          
 (define-class (person name place)
   (instance-vars
    (possessions '())
    (saying ""))
   (initialize
-   (ask place 'enter self))
+   (ask place 'enter self)
+   (ask self 'put 'strength 50)
+   (ask self 'put 'money 100))
+  (parent (basic-object name))
   (method (type) 'person)
+  (method (person?) #t)
   (method (look-around)
     (map (lambda (obj) (ask obj 'name))
 	 (filter (lambda (thing) (not (eq? thing self)))
@@ -131,6 +165,11 @@
 	   (ask thing 'change-possessor self)
 	   'taken)))
 
+  (method (take-all place)
+    (map (lambda (x) (ask self 'take x)) 
+           (filter (lambda (x) (null? (ask x 'possessor)))
+                   (ask place 'things))))
+
   (method (lose thing)
     (set! possessions (delete thing possessions))
     (ask thing 'change-possessor 'no-one)
@@ -154,25 +193,85 @@
 		(ask new-place 'appear p))
 	      possessions)
 	     (set! place new-place)
-	     (ask new-place 'enter self))))) )
+	     (ask new-place 'enter self)))))
+  (method (go-directly-to new-place)
+    (ask place 'exit self)
+    (announce-move name place new-place)
+    (for-each
+      (lambda (p)
+        (ask place 'gone p)
+        (ask new-place 'appear p))
+      possessions)
+    (set! place new-place)
+    (ask new-place 'enter self))
+  (method (get-money num)
+    (ask self 'put 'money (+ (ask self 'money) num)))
+  (method (pay-amount num)
+    (if (> num (ask self 'money))
+      #f
+      (ask self 'put 'money (- (ask self 'money) num))))
+  (method (buy order)
+    (ask place 'sell self order))
+  (method (eat food)
+    (if (and (edible? food) (eq? (ask food 'possessor) self))
+      (begin
+      (ask self 'put 'strength 
+           (+ (ask food 'calories) (ask self 'strength)))
+      (ask self 'lose food)
+      (ask place 'gone food)))))
+
+    
+(define-class (restaurant name class price)
+    (parent (place name))
+    (method (menu) (list (ask class 'name) price))
+    (method (sell person order)
+        (if (not (eq? order (ask class 'name)))
+          (error "this restaurant does not sell" order)
+            (if (ask person 'pay-amount price)
+              (let ((product (instantiate class)))
+                (ask self 'appear product)
+                (ask person 'take product))
+              #f))))
 
 (define-class (thing name)
     (instance-vars (possessor '()))
+    (parent (basic-object name))
     (method (type) 'thing)
+    (method (thing?) #t)
     (method (change-possessor new-possessor) (set! possessor new-possessor))
 )
+
+(define-class (food name calories)
+    (parent (thing name))
+    (initialize (begin
+                  (ask self 'put 'calories calories)
+                  (ask self 'put 'edible? #t))))
+
+(define-class (bagel)
+    (class-vars (name 'bagel))
+    (parent (food name 150)))
+
+(define-class (basic-object name)
+    (instance-vars (table (make-table)))
+    (default-method (lookup message table))
+    (method (put stat value) (insert! stat value table)))
 
 (define-class (ticket name serial place)
     (parent (thing name))
     (initialize (ask place 'appear self)))
 
+(define-class (laptop name)
+    (method (type) 'laptop)
+    (parent (thing name))
+    (method (connect user-password) (ask (ask self 'place) 
+                                         'connect user-password))
+    (method (surf website) (ask (ask self 'place) 'surf website)))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Implementation of thieves for part two
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define *foods* '(pizza potstickers coffee))
 
 (define (edible? thing)
-  (member? (ask thing 'name) *foods*))
+  (ask thing 'edible?))
 
 (define-class (thief name initial-place)
   (parent (person name initial-place))
@@ -182,7 +281,9 @@
 
   (method (notice person)
     (if (eq? behavior 'run)
-	(ask self 'go (pick-random (ask (usual 'place) 'exits)))
+      (if (null? (ask (usual 'place) 'exis))
+        nil
+	(ask self 'go (pick-random (ask (usual 'place) 'exits))))
 	(let ((food-things
 	       (filter (lambda (thing)
 			 (and (edible? thing)
@@ -256,9 +357,9 @@
 
 (define (person? obj)
   (and (procedure? obj)
-       (member? (ask obj 'type) '(person police thief))))
+       (ask obj 'person?)))
 
 (define (thing? obj)
   (and (procedure? obj)
-       (eq? (ask obj 'type) 'thing)))
+       (ask obj 'thing?)))
 
