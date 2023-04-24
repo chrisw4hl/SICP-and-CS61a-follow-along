@@ -197,7 +197,7 @@
 ;need to install special forms for get to find, and refactor the special forms so that they expect only the argument exp.
 
 ;4.6 SICP; I think this should work 
-(define (let->combination exp env)
+(define (let->combination exp)
   (cons (make-lambda (map car (cadr exp)) (caddr exp)) (map cadr (cadr exp)))) 
 
 ;4.7 SICP
@@ -303,6 +303,8 @@
         (list '+ +)
         (list '* *)
         (list '/ /)
+        (list '= =)
+        (list '- -)
         (list 'integer? integer?)
         (list 'list-ref list-ref)
         (list 'not not)))
