@@ -146,7 +146,7 @@
 
 (define mt1 '((cs61a-xc . 27) (cs61a-ya . 40) (cs61a-xw . 35)
                 (cs61a-xd . 38) (cs61a-yb . 29) (cs61a-xf . 32)))
-(define mt2 '((cs61a-yc . 32) (cs61a-xc . 25) (cs61a-xb . 40)
+(define  m t2 '((cs61a-yc . 32) (cs61a-xc . 25) (cs61a-xb . 40)
                         (cs61a-xw . 27) (cs61a-yb . 30) (cs61a-ya . 40)))
 (define mt3 '((cs61a-xb . 32) (cs61a-xk . 34) (cs61a-yb . 30)(cs61a-ya . 40) 
                         (cs61a-xc . 28) (cs61a-xf . 33)))
