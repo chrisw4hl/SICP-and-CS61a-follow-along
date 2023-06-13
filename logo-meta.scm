@@ -19,17 +19,18 @@
 ;;; Problem B1    eval-line
 
 (define (eval-line line-obj env)
-  (if (ask line-obj 'empty?)
-    '=no-value=
-    (begin
-    (logo-eval line-obj env)
-    (eval-line line-obj env))))
+  (let ((result (logo-eval line-obj env)))
+    (cond ((and (ask line-obj 'empty?) (eq? result '=no-value))
+      '=no-value=)
+      ((ask line-obj 'empty?) result)
+      (else 
+    (eval-line line-obj env)))))
 
 ;;; Problem 4    variables  (other procedures must be modified, too)
 ;;; data abstraction procedures
 
 (define (variable? exp)
-  (if (and (symbol? (bf exp)) (eq? (first exp) ':))
+  (if (and (eq? (first exp) ':) (symbol? (bf exp)))
     #t
     #f));; not written yet but we fake it for now
 
@@ -40,32 +41,144 @@
 ;;; Problem A5   handle-infix
 
 (define (de-infix token)
-  (cdr (assoc token '((+ . sum)
+  (cdr (infix? token)))
+
+(define (infix? token)
+  (assoc token '((+ . sum)
 		      (- . difference)
 		      (* . product)
 		      (/ . quotient)
 		      (= . equalp)
 		      (< . lessp)
-		      (> . greaterp)))))
+		      (> . greaterp))))
+
+(define (primitive token)
+  (car (infix? token)))
 
 (define (handle-infix value line-obj env)
-  value)   ;; This doesn't give an error message, so other stuff works.
+  (let ((infix (ask line-obj 'next)))
+    (ask line-obj 'put-back infix)
+    (if (infix? infix)
+      (let ((hold (ask line-obj 'next)))
+        (let ((nextval (eval-prefix line-obj env)))
+          (handle-infix (logo-apply (lookup-procedure (de-infix infix)) (list value nextval)) line-obj env)))
+      value))
 
+      )
+
+;(define (handle-infix value line-obj env)
+;  value)
 
 ;;; Problem B5    eval-definition
 
 (define (eval-definition line-obj)
-  (error "eval-definition not written yet!"))
+  (let ((name (ask line-obj 'next))
+        (varnum 0)
+        (staticvar '())
+        (staticval '()))
+    (define (vars line-obj)
+      (let ((var (ask line-obj 'next)))
+        (cond ((null? var) '())
+              ((variable? var)
+               (set! varnum (+ varnum 1))
+               (cons (variable-name var) (vars line-obj)))
+              ((static? var)
+               (let ((currentstaticvar (ask line-obj 'next)))
+                 (if (null? currentstaticvar)
+                   '()
+                   (let ((currentstaticval (logo-eval line-obj the-global-environment)))
+                       (if (not (variable? currentstaticvar))
+                         (error "procedure static declaration syntax error")
+                       (begin
+                         (ask line-obj 'put-back 'static)
+                         (set! staticvar (cons (variable-name currentstaticvar) staticvar))
+                         (set! staticval (cons currentstaticval staticval))
+                     (vars line-obj)))))))
+               (else (error "Procedure Syntax Error")))))
+      (let ((formals (vars line-obj))
+            (body (call-body)))
+        (set! the-procedures 
+          (cons (list name 'compound varnum (cons formals body) #f staticvar staticval) 
+                the-procedures))
+        '=no-value=)
+      ))
 
+(define (call-body)
+  (let ((body '()))
+    (define (helper)
+      (prompt "-> ")
+      (let ((line (logo-read)))
+        (if (null? line)
+          (logo-print (list "You don't say what to do with" line))
+          (if (not (eq? (car line) 'END))
+            (cons line (helper))
+            '()))
+        ))
+    (helper)))
 
 ;;; Problem 6    eval-sequence
 
 (define (eval-sequence exps env)
-  (error "eval-sequence not written yet!"))
+  (cond ((last-exp? exps) (let ((result (eval-line (make-line-obj (first-exp exps)) env)))
+                            (cond ((eq? result '=stop=) '=no-value=)
+                                  ((and (pair? result) (eq? (car result) '=output=)) (cdr result))
+                                  (else result))))
+        (else
+          (let ((result (eval-line (make-line-obj (first-exp exps)) env)))
+            (cond ((eq? result '=stop=) '=no-value=)
+                  ((and (pair? result) (eq? (car result) '=output=)) (cdr result))
+                  (else
+                    (eval-sequence (rest-exps exps) env)))))))
 
+(define (stepper exps env)
+  (eval-line (make-line-obj (list 'print (first-exp exps))) env)
+                          (prompt ">>> ")
+                          (logo-read)
+                          (let ((result (eval-line (make-line-obj (first-exp exps)) env)))
+                            (cond ((eq? result '=stop=) '=no-value=)
+                                  ((and (pair? result) (eq? (car result) '=output=)) (cdr result))
+                                  (else result))))
 
+(define (eval-sequence-step exps env)
+  (cond ((last-exp? exps) (stepper exps env))
+        (else
+          (let ((result (stepper exps env)))
+            (cond ((eq? '=STOP= result) '=no-value)
+                  ((and (pair? result) (eq? (car result) '=output=)) (cdr result))
+                  (else (eval-sequence-step (rest-exps exps) env)))))))
 
+(define (last-exp? seq)
+  (if (null? (cdr seq) )
+    #t
+    #f))
 
+(define (first-exp seq)
+  (car seq))
+
+(define (rest-exps seq)
+  (cdr seq))
+
+(define (step proc)
+  (set-car! (cddddr (lookup-procedure proc))  #t))
+
+(define (unstep proc)
+  (set-car! (cddddr (lookup-procedure proc))  #f ))
+
+;Problem 8
+(define (test env val)
+  (cond((eq? val 'true) (logo-eval (make-line-obj '(make " TEST" (quote true))) env))
+    ((eq? val 'false) (logo-eval (make-line-obj '(make " TEST"  (quote false))) env))
+    (else (error "val for test not t/f"))))
+
+(define (iftrue env exps)
+  (if (lookup-variable-value " TEST" env)
+    (logo-eval (make-line-obj exps) env)
+    '=no-value=))
+
+(define (iffalse env exps)
+  (if (not (lookup-variable-value " TEST" env))
+    (logo-eval (make-line-obj exps) env)
+    '=no-value=))
 ;;; SETTING UP THE ENVIRONMENT
 
 (define the-primitive-procedures '())
@@ -75,6 +188,11 @@
 	(cons (list name 'primitive count proc)
 	      the-primitive-procedures)))
 
+(add-prim 'test '(1) test)
+(add-prim 'iftrue '(1) iftrue)
+(add-prim 'iffalse '(1) iffalse) 
+(add-prim 'step 1 step)
+(add-prim 'unstep 1 unstep)
 (add-prim 'first 1 first)
 (add-prim 'butfirst 1 bf)
 (add-prim 'bf 1 bf)
@@ -194,6 +312,9 @@
 (define (apply-primitive-procedure p args)
   (apply (text p) args))
 
+(define (proc-flag proc)
+  (car (cddddr proc)))
+
 
 ;;; Now for the code that's based on the book!!!
 
@@ -260,12 +381,25 @@
   (eq? exp 'make))
 
 (define (logo-apply procedure arguments)
+  (let ((eval-proc eval-sequence))
   (cond ((primitive-procedure? procedure)
          (apply-primitive-procedure procedure arguments))
-        ((compound-procedure? procedure)
-	 (error "Compound procedures not implemented yet."))
-        (else
-         (error "Unknown procedure type -- LOGO-APPLY " procedure))))
+        ((compound-procedure? procedure) 
+         (if (proc-flag procedure)
+           (set! eval-proc eval-sequence-step)
+           '())
+           (let ((staticvar (static-var procedure)))
+             (if (null? staticvar)
+               (eval-proc (procedure-body procedure)
+                                   (extend-environment (parameters procedure)
+                                                       arguments
+                                                       the-global-environment))
+               (eval-proc (procedure-body procedure)
+                                   (extend-environment (append (parameters procedure) (static-var procedure))
+                                                       (append arguments (static-val procedure))
+                                                       the-global-environment)))))
+         (else
+           (error "Unknown procedure type -- LOGO-APPLY " procedure)))))
 
 (define (collect-n-args n line-obj env)
   (cond ((= n 0) '())
@@ -331,6 +465,25 @@
 
 (define (procedure-body proc) (cdr (text proc)))
 
+(define (static-frame proc)
+(car (cddddr (cdr proc))))
+
+(define (null-static? proc)
+  (if (null? (cddddr (cdr proc)))
+             #t
+             #f))
+
+(define (static-var proc)
+  (car (cddddr (cdr proc))))
+
+(define (static-val proc)
+  (car (cddddr (cddr proc))))
+
+
+(define (static? exp)
+  (if (eq? exp 'static)
+    #t
+    #f))
 ;;; Section 4.1.3
 
 ;;; Operations on environments
@@ -353,7 +506,7 @@
 
 (define (extend-environment vars vals base-env)
   (if (= (length vars) (length vals))
-      (cons (make-frame vars vals) base-env)
+      (cons (make-frame (cons " TEST" vars) (cons '() vals)) base-env)
       (if (< (length vars) (length vals))
           (error "Too many arguments supplied " vars vals)
           (error "Too few arguments supplied " vars vals))))
@@ -367,7 +520,7 @@
              (car vals))
             (else (scan (cdr vars) (cdr vals)))))
     (if (eq? env the-empty-environment)
-        (error "Unbound variable " var)
+        '=no-value=
         (let ((frame (first-frame env)))
           (scan (frame-variables frame)
                 (frame-values frame)))))
