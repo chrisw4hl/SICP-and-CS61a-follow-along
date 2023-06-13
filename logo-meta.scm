@@ -159,10 +159,12 @@
   (cdr seq))
 
 (define (step proc)
-  (set-car! (cddddr (lookup-procedure proc))  #t))
+  (set-car! (cddddr (lookup-procedure proc))  #t)
+  '=no-value=)
 
 (define (unstep proc)
-  (set-car! (cddddr (lookup-procedure proc))  #f ))
+  (set-car! (cddddr (lookup-procedure proc))  #f )
+  '=no-value=)
 
 ;Problem 8
 (define (test env val)
