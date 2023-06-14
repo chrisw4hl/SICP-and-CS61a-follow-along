@@ -24,29 +24,27 @@
                           (ask self 'hold))))
               (method (put-back token)
                       (if (not (and (null? token) (null? text)))
-                      (set! text (cons token text)))))
+                        (set! text (cons token text)))))
 
 ;;; Problem A2   logo-type
 
 (define (logo-type val)   
-    (cond ((null? val) '=no-value=)
-          ((symbol? val) (display val))
-          ((number? val) (display val))
-          ((list? (car val))
-           (begin
-             (display "[")
-             (logo-type (car val))
-             (display "]")
-             (if (not (null? (cdr val)))
-               (display " "))
-             (logo-type (cdr val))))
-
+  (cond ((null? val) '=no-value=)
+        ((symbol? val) (display val))
+        ((number? val) (display val))
+        ((list? (car val))
+         (begin
+           (display "[")
+           (logo-type (car val))
+           (display "]")
+           (if (not (null? (cdr val)))
+             (display " "))
+           (logo-type (cdr val))))
         (else 
           (begin
             (display (car val))
             (if (not (null? (cdr val)))
-              (display " ")
-              )
+              (display " "))
             (logo-type (cdr val))))))
 
 (define (logo-print val)   
@@ -61,27 +59,14 @@
 ;;; Problem 4   variables   (logo-meta.scm is also affected)
 
 (define (make line-obj env) 
-  (let ((proc logo-eval))
-    (define (helper var line-obj env)
-      (let((val (proc line-obj env)))
+  (let ((var (variable-name (ask line-obj 'next))))
+      (let((val (logo-eval line-obj env)))
         (if (eq? '=no-value= (lookup-variable-value var env))
           (begin
             (define-variable! var val the-global-environment)
             '=no-value=)
           (begin (set-variable-value! var val env)
-                 '=no-value=) )))
-
-  (let ((var (variable-name (ask line-obj 'next))))
-    (let((test (ask line-obj 'next)))
-      (ask line-obj 'put-back test)
-      (if (or (eq? test 'true) (eq? test 'false))
-        (begin
-        (set! proc eval-prefix)
-        (helper var line-obj env))
-        (helper var line-obj env))))
-
-    ))
-
+                 '=no-value=) ))))
 
 ;;; Here are the primitives RUN, IF, and IFELSE.  Problem B2 provides
 ;;; support for these, but you don't have to modify them.   

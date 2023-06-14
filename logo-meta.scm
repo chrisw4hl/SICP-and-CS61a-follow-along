@@ -32,7 +32,7 @@
 (define (variable? exp)
   (if (and (eq? (first exp) ':) (symbol? (bf exp)))
     #t
-    #f));; not written yet but we fake it for now
+    #f))
 
 (define (variable-name exp)
   (bf exp))
@@ -62,9 +62,7 @@
       (let ((hold (ask line-obj 'next)))
         (let ((nextval (eval-prefix line-obj env)))
           (handle-infix (logo-apply (lookup-procedure (de-infix infix)) (list value nextval)) line-obj env)))
-      value))
-
-      )
+      value)))
 
 ;(define (handle-infix value line-obj env)
 ;  value)
@@ -132,15 +130,15 @@
 
 (define (stepper exps env)
   (eval-line (make-line-obj (list 'print (first-exp exps))) env)
-                          (prompt ">>> ")
-                          (logo-read)
-                          (let ((result (eval-line (make-line-obj (first-exp exps)) env)))
+  (prompt ">>> ")
+  (logo-read)
+  (eval-line (make-line-obj (first-exp exps)) env))
+
+(define (eval-sequence-step exps env)
+  (cond ((last-exp? exps) (let ((result (stepper exps env)))
                             (cond ((eq? result '=stop=) '=no-value=)
                                   ((and (pair? result) (eq? (car result) '=output=)) (cdr result))
                                   (else result))))
-
-(define (eval-sequence-step exps env)
-  (cond ((last-exp? exps) (stepper exps env))
         (else
           (let ((result (stepper exps env)))
             (cond ((eq? '=STOP= result) '=no-value)
@@ -168,19 +166,25 @@
 
 ;Problem 8
 (define (test env val)
-  (cond((eq? val 'true) (logo-eval (make-line-obj '(make " TEST" (quote true))) env))
-    ((eq? val 'false) (logo-eval (make-line-obj '(make " TEST"  (quote false))) env))
+  (cond((eq? val 'true) (logo-eval (make-line-obj (list 'make "  TEST" (string->symbol
+                                                                         (word (string->symbol (make-string 1 #\")) 'true)))) env))
+    ((eq? val 'false) (logo-eval (make-line-obj (list 'make "  TEST" (string->symbol
+                                                                       (word (string->symbol (make-string 1 #\")) 'false)))) env))
     (else (error "val for test not t/f"))))
 
 (define (iftrue env exps)
-  (if (lookup-variable-value " TEST" env)
-    (logo-eval (make-line-obj exps) env)
-    '=no-value=))
+  (if (null? (lookup-variable-value " TEST" env))
+    (error "test value not set")
+    (if (eq? 'true (lookup-variable-value " TEST" env))
+      (logo-eval (make-line-obj exps) env)
+      '=no-value=
+      )))
 
 (define (iffalse env exps)
-  (if (not (lookup-variable-value " TEST" env))
+  (if (eq? 'false (lookup-variable-value " TEST" env))
     (logo-eval (make-line-obj exps) env)
-    '=no-value=))
+    '=no-value=
+    ))
 ;;; SETTING UP THE ENVIRONMENT
 
 (define the-primitive-procedures '())
@@ -336,7 +340,9 @@
     (let ((token (ask line-obj 'next)))
       (cond ((self-evaluating? token) token)
             ((variable? token)
-             (lookup-variable-value (variable-name token) env))
+             (cond ((eq? '=no-value= (lookup-variable-value (variable-name token) env)) 
+                    (error "Unbound variable " (variable-name token)))
+                   (else (lookup-variable-value (variable-name token) env))))
             ((quoted? token) (text-of-quotation token))
             ((definition? token) (eval-definition line-obj))
             ((left-paren? token)
@@ -522,10 +528,10 @@
              (car vals))
             (else (scan (cdr vars) (cdr vals)))))
     (if (eq? env the-empty-environment)
-        '=no-value=
-        (let ((frame (first-frame env)))
-          (scan (frame-variables frame)
-                (frame-values frame)))))
+      '=no-value=
+      (let ((frame (first-frame env)))
+        (scan (frame-variables frame)
+              (frame-values frame)))))
   (env-loop env))
 
 (define (set-variable-value! var val env)
