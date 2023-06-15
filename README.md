@@ -5,7 +5,7 @@ This is my collection of code generated and resourses used to follow along with 
 The course lectures are hosted at https://archive.org/details/ucberkeley-webcast-PL3E89002AA9B9879E?sort=titleSorter
 
 I have also uploaded the deb file for the STK evaluator, which I found by searching through the UCB website.
-I was not able to get the stk interpreter working on a 64 bit arch system, as I believe the deb is only usable on a 32 bit system.
+I was not able to get the stk interpreter working on a 64 bit arch system, as I believe the binary is only usable on a 32 bit system.
 
 The course reader website I found with the resourses for this course is here: https://inst.eecs.berkeley.edu/~cs61a/reader/vol1.html
 
