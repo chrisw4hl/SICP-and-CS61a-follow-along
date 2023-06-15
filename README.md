@@ -1,6 +1,6 @@
 # SICP-and-CS61a-follow-along
 
-This is my collection of code generated and resourses used to follow along with UCB CS61A SP2011.
+This is my collection of code generated and resourses used to follow along with UCB CS61A SP2011. The course follows the classic MIT book, Structure and Interpretation of Computer Programs (SICP).
 
 The course lectures are hosted at https://archive.org/details/ucberkeley-webcast-PL3E89002AA9B9879E?sort=titleSorter
 
@@ -13,4 +13,4 @@ Not all of my code is working or correct, especially the deque implementation an
 
 I do not intend to overstep any copywrite protections by preserving reference information.
 My only intentions are to preserve this information in case it is lost from the UCB website in the future.
-I enjoyed following along with this course focues on SICP, thanks to the suggestion of teachyourselfcs.com.
+I enjoyed following along with this course following SICP, thanks to the suggestion of teachyourselfcs.com.
